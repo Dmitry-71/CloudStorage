@@ -1,41 +1,43 @@
-version: '3.9'
-
+version: '3'
 services:
-  front:
-    container_name: 'front'
-    build:
-      context: front/.
-    ports:
-      - '8081:8080'
-    depends_on:
-      - cloud_storage
-
-  cloud_storage:
-    container_name: 'cloud_storage'
+  app:
     build:
       context: .
     ports:
-      - '8080:8080'
+      - "8090:8090"
     depends_on:
-      - database
+      database:
+        condition: service_healthy
     environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://database:5432/cloud_storage
-      SPRING_DATASOURCE_USERNAME: postgres
-      SPRING_DATASOURCE_PASSWORD: postgres
+      SPRING_DATASOURCE_URL: jdbc:postgresql://database:5432/postgres
+      SPRING_DATASOURCE_USERNAME: username
+      SPRING_DATASOURCE_PASSWORD: password
+      SPRING_JPA_HIBERNATE_DDL_AUTO: none
+
 
   database:
-    image: 'postgres:16-alpine'
-    container_name: database
+    image: postgres
     ports:
-      - '5432:5432'
-    restart: always
+      - "5432:5432"
     environment:
-      POSTGRES_DB: 'cloud_storage'
+      POSTGRES_DB: postgres
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U postgres -d postgres" ]
+      test: [ "CMD", "pg_isready", "-U", "postgres" ]
       interval: 10s
       timeout: 5s
       retries: 5
-      start_period: 10s
+  liquibase:
+    image: liquibase/liquibase
+    command: --url=jdbc:postgresql://database:5432/postgres --username=postgres --password=ira1999 --changeLogFile=db.changelog-master.yaml update
+    volumes:
+      - ./src/main/resources/db/changelog/db.changelog-master.yaml:/liquibase/db.changelog-master.yaml
+      - ./src/main/resources/db/changelog/migrations:/liquibase/migrations
+    depends_on:
+      - database
+
+volumes:
+  postgres_data:

@@ -1,7 +1,7 @@
-FROM openjdk:17-jdk-slim
+FROM openjdk:17
 
-EXPOSE 8080
+EXPOSE 8090
 
-ADD target/CloudStorage-0.0.1-SNAPSHOT.jar diploma.jar
+ADD target/cloudstorage-0.0.1-SNAPSHOT.jar CloudStorage.jar
 
-CMD ["java", "-jar", "diploma.jar"]
+ENTRYPOINT ["java", "-jar", "CloudStorage.jar"]
